@@ -74,7 +74,8 @@ class DefaultController extends Controller
     {
 	    $request = Craft::$app->getRequest();
 	    $method = $request->getParam('redirect');
-	    $body = $request->getParam('body');
+        $body = $request->getParam('body');
+
 	    if (is_array($body)) {
 		    $formattedBody = "";
 		    foreach($body as $field => $value) {
@@ -97,7 +98,8 @@ class DefaultController extends Controller
 			'name' => $request->getParam('name'),
 			'email' => $request->getParam('email'),
 			'customFields' => []
-	    ];
+        ];
+
 	    if (count($_FILES)) {
 		    $token = Zendesk::$plugin->zendeskService->submitAttachments($_FILES);
 		    if ($token !== false) {
@@ -111,14 +113,46 @@ class DefaultController extends Controller
 			    	$data["customFields"][$field["fieldId"]] = $request->getParam($field["fieldName"]);
 			    }
 		    }
-	    }
-	    $ticketId = Zendesk::$plugin->zendeskService->submitTicket($data);
-	    if ($ticketId) {
-		    $method = $request->getParam('success')."/".$ticketId;
-	    } else {
-		    $method = $request->getParam('failed');
-	    }
-	    return $this->redirect($method);
+        }
+
+        // Craft::info($data, 'ZendeskLog');
+
+        $ticketId = Zendesk::$plugin->zendeskService->submitTicket($data);
+
+        if ($ticketId) {
+            // SUCCESS...
+
+            // $responseInfo value can be either a path to redirect to,
+            // or a message to return (for ajax requests).
+            $responseInfo = $request->getParam('success');
+
+			if ($request->getIsAjax()) {
+				return $this->asJson(array(
+                    'success' => 1, 
+                    'ticketId' => $ticketId, 
+                    'msg' => $responseInfo
+                ));
+            } else {
+                $method = $responseInfo."/".$ticketId;
+            }
+
+		} else {
+            // FAILURE...
+
+            // $responseInfo value can be either a path to redirect to,
+            // or a message to return (for ajax requests).
+            $responseInfo = $request->getParam('failed');
+
+			if ($request->getIsAjax()) {
+				return $this->asJson(array(
+                    'success' => 0,
+                    'msg' => $responseInfo
+                ));
+            } else {
+				$method = $responseInfo;
+            }
+        }
+        return $this->redirect($method);
     }
     
     /**
