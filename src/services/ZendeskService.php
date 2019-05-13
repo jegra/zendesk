@@ -102,8 +102,48 @@ class ZendeskService extends Component
 	    
 		return $token;
     }
+
+    // Get the available article categories
+    public function getCategories()
+    {
+        $endpoint = "/help_center/en-us/categories.json";
+        return $this->processGetRequest($endpoint);
+    }
+
+    // Get the available article sections (category sub-divisions)
+    public function getSections()
+    {
+        $endpoint = "/help_center/en-us/sections.json";
+        return $this->processGetRequest($endpoint);
+    }
+
+    // Get the available articles
+    public function getArticles()
+    {
+        // Let's sideload our sections and categories to keep our request count down
+        $endpoint = "/help_center/en-us/articles.json?include=sections,categories";
+        return $this->processGetRequest($endpoint);
+    }
+
+
+    private function processGetRequest($endpoint) 
+    {
+        $headers = [
+            'Content-type: application/json',
+            'Accept: application/json'
+        ];
+
+		//send all this to zendesk using our curl wrapper
+		$output = self::curlWrap($endpoint, null, $headers, false);
+		
+		//if response exists, return resutls
+		if ($output) {
+			return $output;
+		}
+		return false;
+    }
     
-    public function curlWrap($url, $data, $headers)
+    public function curlWrap($url, $data, $headers, $usePost = true)
 	{
 		$settings = Zendesk::$plugin->getSettings();
 	    $zdApiKey = $settings->api_key;
@@ -115,16 +155,19 @@ class ZendeskService extends Component
 		curl_setopt($ch, CURLOPT_MAXREDIRS, 10 );
 		curl_setopt($ch, CURLOPT_URL, $zdUrl.$url);
 		curl_setopt($ch, CURLOPT_USERPWD, $zdUser."/token:".$zdApiKey);
-		curl_setopt($ch, CURLOPT_POST, true);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 		curl_setopt($ch, CURLOPT_USERAGENT, "MozillaXYZ/1.0");
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        if ($usePost) {
+            // If we're submitting via POST, set params for that
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        }
 		$output = curl_exec($ch);
 		curl_close($ch);
 		
 		$decoded = json_decode($output);
-		return $decoded;
+        return $decoded;
 	}
 }

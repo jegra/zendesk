@@ -105,15 +105,40 @@ class DefaultController extends Controller
 		    if ($token !== false) {
 		    	$data['token'] = $token;
 		    }
-	    }
-	    if (Craft::$app->getConfig()->getConfigFromFile("zendesk")) {
-		    $customFields = Craft::$app->getConfig()->getConfigFromFile("zendesk")["customFields"];
-		    foreach($customFields as $field) {
-			    if ($request->getParam($field["fieldName"]) <> "") {
-			    	$data["customFields"][$field["fieldId"]] = $request->getParam($field["fieldName"]);
-			    }
-		    }
         }
+        
+        // Check to see if the custom fields have their ids mapped into the fields
+        // already. If so, we grab the values directly from the field names. If not, 
+        // we pull the values from the config file.
+
+        if ($request->getParam('mapFieldIds')) {
+            // Pull ids from field names
+            $fields = $request->getBodyParams();
+
+            // Define some parameters and field names that we know to not be custom fields
+            $ignoredFields = ["action","subject","type","priority","success","failed","mapFieldIds","CRAFT_CSRF_TOKEN","firstName","lastName","name","email","body"];
+
+            foreach($fields as $field => $value) {
+                if (in_array($field, $ignoredFields)) continue;
+                
+                if (is_numeric($field) && ($value != "")) {
+                    // We take any numeric field name to be a custom field ID for Zendesk
+                    $data["customFields"][$field] = $value;
+                }
+            }
+
+        } else {
+            // Get custom field ids from config file
+            if (Craft::$app->getConfig()->getConfigFromFile("zendesk")) {
+                $customFields = Craft::$app->getConfig()->getConfigFromFile("zendesk")["customFields"];
+                foreach($customFields as $field) {
+                    if ($request->getParam($field["fieldName"]) <> "") {
+                        $data["customFields"][$field["fieldId"]] = $request->getParam($field["fieldName"]);
+                    }
+                }
+            }
+        }
+	    
 
         // Craft::info($data, 'ZendeskLog');
 
