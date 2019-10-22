@@ -104,37 +104,97 @@ class ZendeskService extends Component
     }
 
     // Get the available article categories
-    public function getCategories()
+    public function getCategories($params)
     {
         $endpoint = "/help_center/en-us/categories.json";
-        return $this->processGetRequest($endpoint);
+        // Append our params, if provided...
+        if ($params) {
+            $endpoint .= "?{$params}";
+        }
+        return $this->processRequest($endpoint);
     }
 
     // Get the available article sections (category sub-divisions)
-    public function getSections()
+    public function getSections($params)
     {
         $endpoint = "/help_center/en-us/sections.json";
-        return $this->processGetRequest($endpoint);
+        // Append our params, if provided...
+        if ($params) {
+            $endpoint .= "?{$params}";
+        }
+        return $this->processRequest($endpoint);
     }
 
-    // Get the available articles
-    public function getArticles()
+    // Get single article
+    public function getArticle($articleId, $params)
     {
-        // Let's sideload our sections and categories to keep our request count down
-        $endpoint = "/help_center/en-us/articles.json?include=sections,categories";
-        return $this->processGetRequest($endpoint);
+        $endpoint = "/help_center/en-us/articles/{$articleId}.json";
+        // Append our params, if provided...
+        if ($params) {
+            $endpoint .= "?{$params}";
+        }
+        return $this->processRequest($endpoint);
+    }
+    
+    // Get the available articles (we sideload by default...)
+    public function getArticles($params)
+    {
+        $endpoint = "/help_center/en-us/articles.json";
+        // Append our params, if provided...
+        if ($params) {
+            $endpoint .= "?{$params}";
+        }
+        return $this->processRequest($endpoint);
+    }
+
+    // Get articles in a particular section
+    public function getSectionArticles($sectionId, $params)
+    {
+        $endpoint = "/help_center/en-us/sections/{$sectionId}/articles.json";
+        // Append our params, if provided...
+        if ($params) {
+            $endpoint .= "?{$params}";
+        }
+        return $this->processRequest($endpoint);
+    }
+
+    // Get articles based on search parameters
+    public function getSearchResults($params)
+    {
+        $endpoint = "/help_center/articles/search.json";
+        // Append our params...
+        $endpoint .= "?{$params}";
+
+        return $this->processRequest($endpoint);
+    }
+
+    // Post vote based on vote input
+    public function postVote($articleId, $vote)
+    {
+        if ($vote == 'up') {
+            $endpoint = "/help_center/articles/{$articleId}/up.json";
+        } elseif ($vote == 'down') {
+            $endpoint = "/help_center/articles/{$articleId}/down.json";
+        } else {
+            return null;
+        }
+
+        return $this->processRequest($endpoint, null, null, true);
     }
 
 
-    private function processGetRequest($endpoint) 
+
+    private function processRequest($endpoint, $data = null, $headers = null, $usePost = false) 
     {
-        $headers = [
-            'Content-type: application/json',
-            'Accept: application/json'
-        ];
+        if (is_null($headers)) {
+            $headers = [
+                'Content-type: application/json',
+                'Accept: application/json'
+            ];
+        }
 
 		//send all this to zendesk using our curl wrapper
-		$output = self::curlWrap($endpoint, null, $headers, false);
+		$output = self::curlWrap($endpoint, $data, $headers, $usePost);
 		
 		//if response exists, return resutls
 		if ($output) {
