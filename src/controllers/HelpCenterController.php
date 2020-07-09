@@ -40,7 +40,8 @@ class HelpCenterController extends Controller
         'articles',
         'section-articles',
         'search',
-        'vote'
+        'vote',
+        'labels'
     ];
 
     // Public Methods
@@ -57,6 +58,25 @@ class HelpCenterController extends Controller
         $result = 'Welcome to the SupportController actionIndex() method';
 
         return $result;
+    }
+
+    /**
+     * Retrieve labels (tags) used in our articles
+     * e.g.: actions/zendesk/help-center/labels
+     *
+     * @return mixed
+     */
+    public function actionLabels() {
+        $request = Craft::$app->getRequest();
+        $params = $request->queryStringWithoutPath;
+        $data = Zendesk::$plugin->zendeskService->getLabels($params);
+
+        if ($data) {
+            return $this->asJson(array(
+                'success' => 1,
+                'data' => $data
+            ));
+        }
     }
 
     /**

@@ -103,6 +103,17 @@ class ZendeskService extends Component
 		return $token;
     }
 
+    // Get a list of all labels (tags) currently used in our articles
+    public function getLabels($params)
+    {
+        $endpoint = "/help_center/articles/labels.json";
+        // Append our params, if provided...
+        if ($params) {
+            $endpoint .= "?{$params}";
+        }
+        return $this->processRequest($endpoint);
+    }
+
     // Get the available article categories
     public function getCategories($params)
     {
