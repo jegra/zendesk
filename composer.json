@@ -2,7 +2,7 @@
     "name": "adigital/zendesk",
     "description": "Creates a new support ticket in Zendesk using the JSON API",
     "type": "craft-plugin",
-    "version": "1.0.6",
+    "version": "2.0.0",
     "keywords": [
         "craft",
         "cms",
@@ -32,7 +32,7 @@
     "extra": {
         "name": "Zendesk",
         "handle": "zendesk",
-        "schemaVersion": "1.0.0",
+        "schemaVersion": "2.0.0",
         "hasCpSettings": true,
         "hasCpSection": false,
         "changelogUrl": "https://github.com/a-digital/zendesk/blob/master/CHANGELOG.md",
